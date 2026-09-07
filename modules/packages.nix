@@ -26,10 +26,15 @@
     fuzzel
 
     # Wayland
-    waylock
+    hyprlock
+    hypridle
     brightnessctl
     awww
     waybar
+    playerctl
+
+    # Notification daemon (fnottctl must be on the session PATH for binds/indicator)
+    fnott
 
     # On-screen indicators (volume, brightness) for media keys
     swayosd
