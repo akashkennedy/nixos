@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+FLAKE="${FLAKE:-/home/akash/nixos}"
+
+echo "==> Testing: sudo nixos-rebuild test --flake $FLAKE#nixos"
+sudo nixos-rebuild test --flake "$FLAKE#nixos"
+
+echo "==> Success: configuration applied for this boot only."

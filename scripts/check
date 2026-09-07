@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+FLAKE="${FLAKE:-/home/akash/nixos}"
+
+echo "==> Checking: nix flake check $FLAKE"
+nix flake check "$FLAKE"
+
+echo "==> Success: flake checks passed."

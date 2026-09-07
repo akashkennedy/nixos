@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+FLAKE="${FLAKE:-/home/akash/nixos}"
+
+echo "==> Building: nixos-rebuild build --flake $FLAKE#nixos"
+nixos-rebuild build --flake "$FLAKE#nixos"
+
+echo "==> Success: configuration built without switching."

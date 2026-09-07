@@ -1,109 +1,53 @@
-{ config, pkgs, inputs, ... }:
+{ config, pkgs, ... }:
 
 {
-  # ==========================================================================
-  # Home Manager
-  # ==========================================================================
-
   home.username = "akash";
-
   home.homeDirectory = "/home/akash";
 
-  # Keep this at the version you originally started Home Manager with.
   home.stateVersion = "26.05";
 
-
-  # ==========================================================================
-  # User Packages
-  # ==========================================================================
+  home.sessionPath = [
+    "$HOME/.opencode/bin"
+  ];
 
   home.packages = with pkgs; [
-    # CLI tools
     fastfetch
     ripgrep
     fd
     tree
     unzip
     zip
-
-    # Development
-    gcc
-    gnumake
-
-    # Git tools
     lazygit
   ];
-
-
-  # ==========================================================================
-  # Git
-  # ==========================================================================
 
   programs.git = {
     enable = true;
 
-    userName = "Akash";
+    settings = {
+      user.name = "Akash";
+    };
   };
-
-
-  # ==========================================================================
-  # Bash
-  # ==========================================================================
 
   programs.bash = {
     enable = true;
 
     shellAliases = {
-      ll = "ls -lah";
-      la = "ls -A";
-      ".." = "cd ..";
-      rebuild = "sudo nixos-rebuild switch --flake /etc/nixos#nixos";
-      update = "sudo nix flake update /etc/nixos";
+      nixos = "cd ~/nixos";
+
+      rebuild = "sudo nixos-rebuild switch --flake ~/nixos#nixos";
+      test = "sudo nixos-rebuild test --flake ~/nixos#nixos";
+      build = "nixos-rebuild build --flake ~/nixos#nixos";
+
+      update = "nix flake update ~/nixos";
+      check = "nix flake check ~/nixos";
+
+      status = "git -C ~/nixos status";
+      diff = "git -C ~/nixos diff";
+      log = "git -C ~/nixos log --oneline --decorate --graph";
+
+      nixdoc = "less ~/nixos/README.md";
     };
   };
 
-
-  # ==========================================================================
-  # FZF
-  # ==========================================================================
-
-  programs.fzf = {
-    enable = true;
-  };
-
-
-  # ==========================================================================
-  # Zoxide
-  # ==========================================================================
-
-  programs.zoxide = {
-    enable = true;
-
-    enableBashIntegration = true;
-  };
-
-
-  # ==========================================================================
-  # Home Manager
-  # ==========================================================================
-
   programs.home-manager.enable = true;
-
-
-  # ==========================================================================
-  # XDG
-  # ==========================================================================
-
-  xdg.enable = true;
-
-
-  # ==========================================================================
-  # Environment Variables
-  # ==========================================================================
-
-  home.sessionVariables = {
-    EDITOR = "nvim";
-    VISUAL = "nvim";
-  };
 }
-

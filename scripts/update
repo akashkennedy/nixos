@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+FLAKE="${FLAKE:-/home/akash/nixos}"
+
+echo "==> Updating flake.lock: nix flake update $FLAKE"
+nix flake update "$FLAKE"
+
+echo "==> Success: flake.lock updated (commit it manually if desired)."

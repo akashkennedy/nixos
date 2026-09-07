@@ -3,7 +3,23 @@
 {
   imports = [
     ./hardware-configuration.nix
+
+    ./modules/niri.nix
+    ./modules/audio.nix
+    ./modules/packages.nix
   ];
+
+  # ==========================================================================
+  # Home Manager
+  # ==========================================================================
+
+  home-manager = {
+    useGlobalPkgs = true;
+    useUserPackages = true;
+
+    users.akash = import ./home.nix;
+  };
+
 
   # ==========================================================================
   # Nix
@@ -24,6 +40,15 @@
 
 
   # ==========================================================================
+  # Dynamic loader for non-Nix binaries
+  # ==========================================================================
+
+  # Lets manually-installed, dynamically-linked binaries (e.g. the OpenCode
+  # binary at ~/.opencode/bin/opencode) run on NixOS.
+  programs.nix-ld.enable = true;
+
+
+  # ==========================================================================
   # Boot
   # ==========================================================================
 
@@ -32,7 +57,7 @@
       systemd-boot.enable = true;
       efi.canTouchEfiVariables = true;
 
-      # Press a key during boot if you need the boot menu.
+      # Boot menu hidden. Hold a key during boot to show it.
       timeout = 0;
     };
 
@@ -59,6 +84,8 @@
     hostName = "nixos";
 
     networkmanager.enable = true;
+
+    firewall.enable = true;
   };
 
 
@@ -112,35 +139,12 @@
 
 
   # ==========================================================================
-  # Desktop / Wayland
-  # ==========================================================================
-
-  programs.niri.enable = true;
-
-  services.displayManager.ly.enable = true;
-
-
-  # ==========================================================================
   # Bluetooth
   # ==========================================================================
 
   hardware.bluetooth = {
     enable = true;
     powerOnBoot = true;
-  };
-
-
-  # ==========================================================================
-  # Audio
-  # ==========================================================================
-
-  # PipeWire is recommended for modern Linux desktop audio.
-  services.pipewire = {
-    enable = true;
-
-    pulse.enable = true;
-    alsa.enable = true;
-    alsa.support32Bit = true;
   };
 
 
@@ -155,54 +159,10 @@
 
 
   # ==========================================================================
-  # System packages
-  # ==========================================================================
-
-  environment.systemPackages = with pkgs; [
-    # Editors
-    vim
-    neovim
-
-    # Shell / terminal utilities
-    bash
-    wget
-    git
-
-    # Terminal
-    kitty
-
-    # File manager
-    yazi
-
-    # Launcher
-    fuzzel
-
-    # Wayland
-    waylock
-    brightnessctl
-    awww
-    waybar
-
-    # Bluetooth
-    bluetuith
-
-    # Audio
-    pulsemixer
-    ncpamixer
-    alsa-utils
-
-    # System monitoring
-    btop
-  ];
-
-
-  # ==========================================================================
   # Programs
   # ==========================================================================
 
   programs.firefox.enable = true;
-
-  programs.mtr.enable = true;
 
   programs.gnupg.agent = {
     enable = true;
@@ -226,24 +186,6 @@
 
 
   # ==========================================================================
-  # Firewall
-  # ==========================================================================
-
-  networking.firewall.enable = true;
-
-
-  # ==========================================================================
-  # Niri PATH workaround
-  # ==========================================================================
-
-  # NixOS otherwise injects a stripped PATH via Environment=
-  # on the niri.service unit.
-  #
-  # Keep this only if you actually need it with your Niri setup.
-  systemd.user.services.niri.enableDefaultPath = false;
-
-
-  # ==========================================================================
   # NixOS State Version
   # ==========================================================================
 
@@ -255,4 +197,3 @@
   # semantics you originally installed with.
   system.stateVersion = "26.05";
 }
-

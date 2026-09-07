@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+FLAKE="${FLAKE:-/home/akash/nixos}"
+
+echo "==> Validating flake: nix flake check $FLAKE"
+nix flake check "$FLAKE"
+
+echo "==> Building and switching: sudo nixos-rebuild switch --flake $FLAKE#nixos"
+sudo nixos-rebuild switch --flake "$FLAKE#nixos"
+
+echo "==> Success: system rebuilt and switched."
+echo "    Roll back anytime with: nixos-rebuild switch --rollback"
