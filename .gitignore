@@ -1,0 +1,12 @@
+*.secret
+*.key
+*.pem
+secrets/
+*.swp
+*.swo
+*~
+.#*
+result
+result-*
+.DS_Store
+Thumbs.db
