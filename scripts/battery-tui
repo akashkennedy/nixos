@@ -1,0 +1,96 @@
+#!/usr/bin/env bash
+# TUI for battery status + power profile switching.
+set -euo pipefail
+
+BAT="${BAT:-BAT1}"
+SYS=/sys/class/power_supply/$BAT
+
+die() {
+  echo "error: $*" >&2
+  exit 1
+}
+
+profile_get() {
+  powerprofilesctl get 2>/dev/null
+}
+
+profile_set() {
+  powerprofilesctl set "$1" 2>/dev/null
+}
+
+time_remaining() {
+  local status energy_full energy_now power_now
+  status=$(cat "$SYS/status" 2>/dev/null || echo "Unknown")
+  energy_full=$(tr -cd '0-9' < "$SYS/energy_full" 2>/dev/null)
+  energy_now=$(tr -cd '0-9' < "$SYS/energy_now" 2>/dev/null)
+  power_now=$(tr -cd '0-9' < "$SYS/power_now" 2>/dev/null)
+
+  if [[ "$status" == "Full" || -z "$power_now" || "$power_now" -eq 0 ]]; then
+    printf "plugged in"
+    return
+  fi
+
+  # sysfs uses µW / µWh, so energy / power gives hours directly.
+  if [[ -n "$energy_now" && -n "$energy_full" ]]; then
+    if [[ "$status" == "Discharging" ]]; then
+      awk -v e="$energy_now" -v p="$power_now" 'BEGIN {
+        h = e / p; m = int(((h * 60) % 60) + 0.5); if (m == 60) { m = 0; h++ }
+        printf "%dh %02dm until empty", int(h), m }'
+    elif [[ "$status" == "Charging" ]]; then
+      awk -v e="$((energy_full - energy_now))" -v p="$power_now" 'BEGIN {
+        h = e / p; m = int(((h * 60) % 60) + 0.5); if (m == 60) { m = 0; h++ }
+        printf "%dh %02dm until full", int(h), m }'
+    else
+      printf "calculating…"
+    fi
+  else
+    printf "calculating…"
+  fi
+}
+
+draw_status() {
+  echo "  Battery: $BAT"
+  echo "  Status : $(cat "$SYS/status" 2>/dev/null || echo Unknown)  Capacity: $(cat "$SYS/capacity" 2>/dev/null || echo ?)%"
+  echo "  Time   : $(time_remaining)"
+  echo "  Cycle  : $(cat "$SYS/cycle_count" 2>/dev/null || echo n/a)"
+}
+
+profiles=()
+mapfile -t profiles < <(powerprofilesctl list 2>/dev/null | sed -nE 's/^\s*\*?\s*([a-z-]+):.*/\1/p' | sort -u)
+
+main() {
+  while true; do
+    clear
+    echo "================ battery ================"
+    draw_status
+    if command -v upower >/dev/null 2>&1; then
+      echo "  ---"
+      upower -i "/org/freedesktop/UPower/devices/battery_$BAT" 2>/dev/null \
+        | grep -E "state|percentage|energy-rate|time to|technology|voltage" | sed 's/^/  /'
+    fi
+    echo
+    echo "================  power  ================"
+    echo "  Current profile: $(profile_get)"
+    echo
+    local i=0
+    for p in "${profiles[@]}"; do
+      i=$((i + 1))
+      printf "  %d) %s\n" "$i" "$p"
+    done
+    echo "  q) leave"
+    echo
+    read -r -p "  choice: " choice
+
+    case "$choice" in
+      q|Q|quit) exit 0 ;;
+      [0-9]*)
+        if [[ "$choice" -ge 1 && "$choice" -le "${#profiles[@]}" ]]; then
+          profile_set "${profiles[$((choice - 1))]}"
+        fi
+        ;;
+      *) ;; # redraw
+    esac
+  done
+}
+
+main

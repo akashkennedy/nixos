@@ -26,6 +26,7 @@ scripts/
   build                    nixos-rebuild build
   check                    nix flake check
   update                   nix flake update
+  battery-tui              Battery status + power-profile TUI (clicked from Waybar)
 docs/                      Additional notes
 ```
 
@@ -46,37 +47,39 @@ docs/                      Additional notes
 
 All aliases live in `home.nix` and shell script equivalents in `scripts/`.
 
-## Boot Menu
+## Waybar
 
-`boot.loader.timeout = 0` hides the systemd-boot menu. To open it, **hold any
-key** (e.g. Shift or arrow key) during the very early boot. From there you can
-select a previous generation to roll back.
+Declared in `home.nix` under `programs.waybar` (config + `style.css`). Layout:
 
-## Rollback
+- left: empty, center: clock, right: `niri/workspaces` → wifi → bluetooth →
+  battery (battery at the far right end)
 
-Find a previous generation:
+Clicking a module opens a TUI in a kitty window:
 
-```
-nixos-rebuild list-generations
-```
+| Module  | Click opens                  |
+|---------|------------------------------|
+| WiFi    | `nmtui`                      |
+| Bluetooth | `bluetuith`                |
+| Battery | `battery-tui` (status + power profile switching) |
+| Clock   | `calcurse` (calendar)        |
 
-Switch back to it:
+The TUIs open as **floating popups pinned right below the bar** (not tiled
+windows). This is done with `window-rule`s in `~/.config/niri/config.kdl`
+(`open-floating` + `default-floating-position`): WiFi/Bluetooth/Battery tuck
+under the right modules, the calendar centers under the clock. Each kitty
+window is spawned with `--class waybar-tui` and a `--title`/`--geometry` so
+niri can match and size it. Note that niri reads its config only at startup,
+so after changing these rules you must log out and back in for them to apply.
 
-```
-sudo nixos-rebuild switch --flake ~/nixos#nixos --rollback
-```
+`programs.niri` (in `modules/niri.nix`) spawns waybar at login
+(`spawn-at-startup "waybar"` in `~/.config/niri/config.kdl`). The niri IPC
+socket is exposed to waybar via `NIRI_SOCKET`, which niri sets for session
+processes — do not launch waybar outside the session or workspaces will not
+render.
 
-or select it from the boot menu with a held key.
-
-## Updating
-
-```
-nix flake update ~/nixos
-sudo nixos-rebuild switch --flake ~/nixos#nixos
-```
-
-nixpkgs tracks `nixos-26.05` and Home Manager tracks `release-26.05`, so inputs
-are kept in lock-step.
+`battery-tui` is installed from `scripts/battery-tui` and uses
+`power-profiles-daemon` (`services.power-profiles-daemon.enable`, see
+`configuration.nix`) for power mode switching and `upower` for battery detail.
 
 ## Note on /etc/nixos
 

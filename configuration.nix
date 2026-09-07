@@ -149,6 +149,17 @@
 
 
   # ==========================================================================
+  # Power management
+  # ==========================================================================
+
+  # Power profile switching (power-saver / balanced / performance).
+  services.power-profiles-daemon.enable = true;
+
+  # Battery monitoring backend for the battery TUI + Waybar.
+  services.upower.enable = true;
+
+
+  # ==========================================================================
   # Fonts
   # ==========================================================================
 
