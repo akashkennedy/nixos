@@ -1,4 +1,4 @@
-{ config, pkgs, lib, ... }:
+{ config, pkgs, lib, wlctl, ... }:
 
 {
   imports = [
@@ -7,6 +7,7 @@
     ./modules/niri.nix
     ./modules/audio.nix
     ./modules/packages.nix
+    ./modules/tui-packages.nix
   ];
 
   # ==========================================================================
@@ -16,6 +17,10 @@
   home-manager = {
     useGlobalPkgs = true;
     useUserPackages = true;
+
+    extraSpecialArgs = {
+      inherit wlctl;
+    };
 
     users.akash = import ./home.nix;
   };

@@ -31,8 +31,11 @@
     awww
     waybar
 
+    # On-screen indicators (volume, brightness) for media keys
+    swayosd
+
     # Bluetooth
-    bluetuith
+    bluetui
 
     # Audio
     pulsemixer
@@ -44,6 +47,7 @@
 
     # Network diagnostics
     mtr
+    bandwhich
 
     # Dev tools
     nodejs
