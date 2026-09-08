@@ -90,13 +90,13 @@
         padding-vertical = 12;
         padding-horizontal = 12;
 
-        title-color = "6c7086";
+        title-color = "a6adc8";
         summary-color = "cdd6f4";
-        body-color = "bac2de";
+        body-color = "cdd6f4";
 
         # Progress (volume / media notifs)
         progress-bar-height = 4;
-        progress-color = "89b4fa";
+        progress-color = "6c7086";
         progress-style = "bar";
 
         # Actions via fuzzel (dmenu replacement)
@@ -106,7 +106,7 @@
 
       low = {
         # Dimmed accent — Omarchy tints low urgency toward the muted tone
-        title-color = "6c7086";
+        title-color = "a6adc8";
         summary-color = "9399b2";
         body-color = "7f849c";
       };
@@ -115,18 +115,18 @@
         # Blue accent border, matching the Omarchy "countdown" accent
         border-color = "89b4fa";
         background = "1e1e2e";
-        title-color = "6c7086";
+        title-color = "a6adc8";
         summary-color = "cdd6f4";
-        body-color = "bac2de";
+        body-color = "cdd6f4";
       };
 
       critical = {
-        # Omarchy urgent accent — red border as the urgency indicator
+        # Urgent accent — orange border as the urgency indicator
         background = "1e1e2e";
-        border-color = "f38ba8";
-        title-color = "6c7086";
-        summary-color = "f38ba8";
-        body-color = "f4dbd6";
+        border-color = "fab387";
+        title-color = "a6adc8";
+        summary-color = "cdd6f4";
+        body-color = "cdd6f4";
       };
     };
   };
@@ -155,7 +155,7 @@
     {
       "layer": "overlay",
       "position": "bottom",
-      "height": 28,
+      "height": 22,
       "modules-center": ["notif"],
       "notif": {
         "format": "{}",
@@ -173,7 +173,7 @@
       border: none;
       border-radius: 0;
       font-family: "FiraCode Nerd Font", "JetBrainsMono Nerd Font", monospace;
-      font-size: 14px;
+      font-size: 12px;
       min-height: 0;
       padding: 0;
       margin: 0;
@@ -189,7 +189,7 @@
       border: 2px solid #89b4fa;
       border-radius: 0;
       color: #6c7086;
-      padding: 0 12px;
+      padding: 0 8px;
     }
 
     #notif.active {
