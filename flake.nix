@@ -13,13 +13,18 @@
       url = "github:aashish-thapa/wlctl";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    nirimon = {
+      url = "github:stepbrobd/nirimon";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
-  outputs = { nixpkgs, home-manager, wlctl, ... }: {
+  outputs = { nixpkgs, home-manager, wlctl, nirimon, ... }: {
     nixosConfigurations.nixos = nixpkgs.lib.nixosSystem {
       system = "x86_64-linux";
 
-      specialArgs = { inherit wlctl; };
+      specialArgs = { inherit wlctl nirimon; };
 
       modules = [
         ./configuration.nix

@@ -1,10 +1,16 @@
-{ config, pkgs, lib, wlctl, ... }:
+{ config, pkgs, lib, wlctl, nirimon, ... }:
 
 let
   system = pkgs.stdenv.hostPlatform.system;
 
   # TUI for managing WiFi via NetworkManager (Impala fork), from the flake input.
   wlctl-pkg = wlctl.packages.${system}.default;
+
+  # TUI monitor configuration for niri, from the flake input.
+  nirimon-pkg = nirimon.packages.${system}.default;
+
+  # TUI for managing NixOS (generations, rebuilds, services, etc.).
+  nixmate-pkg = pkgs.nixmate;
 
   # Battery charge threshold manager (Ooooze/batctl).
   # NOTE: nixpkgs' own `batctl` is the B.A.T.M.A.N. mesh tool; we need the
@@ -52,5 +58,7 @@ in
     batctl
     rencal
     clock-tui
+    nixmate-pkg
+    nirimon-pkg
   ];
 }

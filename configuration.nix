@@ -1,4 +1,4 @@
-{ config, pkgs, lib, wlctl, ... }:
+{ config, pkgs, lib, wlctl, nirimon, ... }:
 
 {
   imports = [
@@ -19,7 +19,7 @@
     useUserPackages = true;
 
     extraSpecialArgs = {
-      inherit wlctl;
+      inherit wlctl nirimon;
     };
 
     users.akash = import ./home.nix;
