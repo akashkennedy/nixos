@@ -136,6 +136,8 @@
 
     description = "Akash";
 
+    shell = pkgs.fish;
+
     extraGroups = [
       "wheel"
       "networkmanager"
@@ -179,6 +181,8 @@
   # ==========================================================================
 
   programs.firefox.enable = true;
+
+  programs.fish.enable = true;
 
   programs.gnupg.agent = {
     enable = true;

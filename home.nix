@@ -28,7 +28,7 @@
     };
   };
 
-  programs.bash = {
+  programs.fish = {
     enable = true;
 
     shellAliases = {
@@ -47,6 +47,13 @@
 
       nixdoc = "less ~/nixos/README.md";
     };
+
+    plugins = [
+      {
+        name = "pure";
+        src = pkgs.fishPlugins.pure;
+      }
+    ];
   };
 
   programs.home-manager.enable = true;
