@@ -1,4 +1,4 @@
-{ config, pkgs, lib, wlctl, nirimon, ... }:
+{ config, pkgs, lib, wlctl, nirimon, helium, ... }:
 
 {
   imports = [
@@ -42,6 +42,7 @@
 
   # Allow unfree packages.
   nixpkgs.config.allowUnfree = true;
+  nixpkgs.overlays = [ helium.overlays.default ];
 
 
   # ==========================================================================
@@ -179,8 +180,6 @@
   # ==========================================================================
   # Programs
   # ==========================================================================
-
-  programs.firefox.enable = true;
 
   programs.fish.enable = true;
 

@@ -9,7 +9,9 @@
   environment.systemPackages = with pkgs; [
     # Editors
     vim
-    neovim
+
+    # Browser
+    helium
 
     # Shell / terminal utilities
     bash
