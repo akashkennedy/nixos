@@ -471,16 +471,26 @@
     plugins.cmp = {
       enable = true;
       autoEnableSources = true;
+
+      # VS Code-style: show at most 5 of the most relevant entries in a
+      # compact popup instead of dumping every snippet.
+      settings.performance.max_view_entries = 5;
+      settings.window.completion = {
+        max_height = 5;
+        border = "rounded";
+      };
+
       settings.snippet.expand = ''
         function(args)
           require("luasnip").lsp_expand(args.body)
         end
       '';
       settings.mapping = {
+        # Tab inserts the highlighted suggestion / snippet.
         "<Tab>" = ''
           cmp.mapping(function(fallback)
             if cmp.visible() then
-              cmp.select_next_item()
+              cmp.confirm({ select = true })
             elseif require("luasnip").expand_or_jumpable() then
               require("luasnip").expand_or_jump()
             else
@@ -488,11 +498,28 @@
             end
           end, { "i", "s" })
         '';
-        "<S-Tab>" = ''
+        # Cycle through the suggestions with Ctrl+j / Ctrl+k.
+        "<C-j>" = ''
           cmp.mapping(function(fallback)
             if cmp.visible() then
-              cmp.select_prev_item()
-            elseif require("luasnip").jumpable(-1) then
+              cmp.select_next_item({ behavior = cmp.SelectBehavior.Select })
+            else
+              fallback()
+            end
+          end, { "i", "s" })
+        '';
+        "<C-k>" = ''
+          cmp.mapping(function(fallback)
+            if cmp.visible() then
+              cmp.select_prev_item({ behavior = cmp.SelectBehavior.Select })
+            else
+              fallback()
+            end
+          end, { "i", "s" })
+        '';
+        "<S-Tab>" = ''
+          cmp.mapping(function(fallback)
+            if require("luasnip").jumpable(-1) then
               require("luasnip").jump(-1)
             else
               fallback()
@@ -500,6 +527,8 @@
           end, { "i", "s" })
         '';
         "<CR>" = "cmp.mapping.confirm({ select = true })";
+        "<C-Space>" = "cmp.mapping.complete()";
+        "<C-e>" = "cmp.mapping.abort()";
         "<C-b>" = "cmp.mapping.scroll_docs(-4)";
         "<C-f>" = "cmp.mapping.scroll_docs(4)";
       };
@@ -528,15 +557,16 @@
     # Dashboard
     # --------------------------------------------------------------------------
 
-    plugins.dashboard = {
+    plugins.alpha = {
       enable = true;
-      settings = {
-        theme = "hyper";
-        config = {
-          week_header.enable = true;
-          project.enable = false;
-          mru.limit = 20;
-          header = [
+      settings.layout = [
+        {
+          type = "padding";
+          val = 4;
+        }
+        {
+          type = "text";
+          val = [
             "  ███╗   ██╗███████╗ ██████╗ ██╗   ██╗██╗███╗   ███╗"
             "  ████╗  ██║██╔════╝██╔═══██╗██║   ██║██║████╗ ████║"
             "  ██╔██╗ ██║█████╗  ██║   ██║██║   ██║██║██╔████╔██║"
@@ -544,41 +574,156 @@
             "  ██║ ╚████║███████╗╚██████╔╝ ╚████╔╝ ██║██║ ╚═╝ ██║"
             "  ╚═╝  ╚═══╝╚══════╝ ╚═════╝   ╚═══╝  ╚═╝╚═╝     ╚═╝"
           ];
-          shortcut = [
+          opts = {
+            position = "center";
+            hl = "Type";
+          };
+        }
+        {
+          type = "padding";
+          val = 2;
+        }
+        {
+          type = "group";
+          val = [
             {
-              desc = "Find Files";
-              group = "DiagnosticInfo";
-              action = "Telescope find_files";
-              key = "f";
+              type = "button";
+              val = "  New file";
+              opts = {
+                shortcut = "n";
+                align_shortcut = "right";
+                width = 50;
+                hl = "Normal";
+                keymap = [
+                  "n"
+                  "n"
+                  "<cmd>ene<CR>"
+                  {
+                    noremap = true;
+                    silent = true;
+                  }
+                ];
+              };
+              on_press.__raw = "function() vim.cmd([[ene]]) end";
             }
             {
-              desc = "Recent Files";
-              group = "DiagnosticInfo";
-              action = "Telescope oldfiles";
-              key = "r";
+              type = "button";
+              val = "  Find file";
+              opts = {
+                shortcut = "f";
+                align_shortcut = "right";
+                width = 50;
+                hl = "Normal";
+                keymap = [
+                  "n"
+                  "f"
+                  "<cmd>Telescope find_files<CR>"
+                  {
+                    noremap = true;
+                    silent = true;
+                  }
+                ];
+              };
+              on_press.__raw = "function() require('telescope.builtin').find_files() end";
             }
             {
-              desc = "Find Text";
-              group = "DiagnosticInfo";
-              action = "Telescope live_grep";
-              key = "g";
+              type = "button";
+              val = "  Recent files";
+              opts = {
+                shortcut = "r";
+                align_shortcut = "right";
+                width = 50;
+                hl = "Normal";
+                keymap = [
+                  "n"
+                  "r"
+                  "<cmd>Telescope oldfiles<CR>"
+                  {
+                    noremap = true;
+                    silent = true;
+                  }
+                ];
+              };
+              on_press.__raw = "function() require('telescope.builtin').oldfiles() end";
             }
             {
-              desc = "Explorer";
-              group = "DiagnosticInfo";
-              action = "Neotree toggle";
-              key = "n";
+              type = "button";
+              val = "  Find text";
+              opts = {
+                shortcut = "g";
+                align_shortcut = "right";
+                width = 50;
+                hl = "Normal";
+                keymap = [
+                  "n"
+                  "g"
+                  "<cmd>Telescope live_grep<CR>"
+                  {
+                    noremap = true;
+                    silent = true;
+                  }
+                ];
+              };
+              on_press.__raw = "function() require('telescope.builtin').live_grep() end";
             }
             {
-              desc = "Quit Neovim";
-              group = "DiagnosticError";
-              action = "qa";
-              key = "q";
+              type = "button";
+              val = "  Explorer";
+              opts = {
+                shortcut = "e";
+                align_shortcut = "right";
+                width = 50;
+                hl = "Normal";
+                keymap = [
+                  "n"
+                  "e"
+                  "<cmd>Neotree toggle<CR>"
+                  {
+                    noremap = true;
+                    silent = true;
+                  }
+                ];
+              };
+              on_press.__raw = "function() require('neo-tree.command').execute({ action = 'toggle' }) end";
+            }
+            {
+              type = "button";
+              val = "  Quit Neovim";
+              opts = {
+                shortcut = "q";
+                align_shortcut = "right";
+                width = 50;
+                hl = "Normal";
+                keymap = [
+                  "n"
+                  "q"
+                  "<cmd>qa<CR>"
+                  {
+                    noremap = true;
+                    silent = true;
+                  }
+                ];
+              };
+              on_press.__raw = "function() vim.cmd([[qa]]) end";
             }
           ];
-          footer = [ "akash · NixOS 26.05" ];
-        };
-      };
+          opts = {
+            spacing = 1;
+          };
+        }
+        {
+          type = "padding";
+          val = 2;
+        }
+        {
+          type = "text";
+          val = [ "akash · NixOS 26.05" ];
+          opts = {
+            position = "center";
+            hl = "Keyword";
+          };
+        }
+      ];
     };
 
     # --------------------------------------------------------------------------
