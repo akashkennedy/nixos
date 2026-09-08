@@ -23,6 +23,13 @@
     unzip
     zip
     lazygit
+
+    # C/C++ toolchain
+    gcc
+    gdb
+    gnumake
+    cmake
+    pkg-config
   ];
 
   programs.git = {

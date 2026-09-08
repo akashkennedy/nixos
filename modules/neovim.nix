@@ -285,13 +285,18 @@
 
       # --- git ---
       {
-        key = "<leader>gs";
-        action = "<cmd>Telescope git_status<cr>";
+        key = "<leader>gg";
+        action = "<cmd>LazyGit<cr>";
         options = { silent = true; };
       }
       {
-        key = "<leader>gg";
+        key = "<leader>gl";
         action = "<cmd>Telescope git_commits<cr>";
+        options = { silent = true; };
+      }
+      {
+        key = "<leader>gs";
+        action = "<cmd>Telescope git_status<cr>";
         options = { silent = true; };
       }
       {
@@ -316,6 +321,16 @@
       }
 
       # --- terminal ---
+      {
+        key = "<C-\\>";
+        action = "<cmd>ToggleTerm<cr>";
+        options = { silent = true; };
+      }
+      {
+        key = "<leader>tt";
+        action = "<cmd>ToggleTerm direction=float<cr>";
+        options = { silent = true; };
+      }
       {
         key = "<leader>ft";
         action = "<cmd>ToggleTerm direction=float<cr>";
@@ -445,6 +460,13 @@
             return { timeout_ms = 500 }
           end
         '';
+        # Deterministic C style: 4-space indent, 100-col limit, so saves always
+        # produce the same predictable layout (LLVM-style braces/parens).
+        formatters.clang-format.args = [
+          "-assume-filename"
+          "$FILENAME"
+          "-style={BasedOnStyle: LLVM, IndentWidth: 4, ColumnLimit: 100, IndentCaseLabels: true}"
+        ];
       };
     };
 
@@ -748,7 +770,7 @@
 
     plugins.lualine = {
       enable = true;
-      settings.options.theme = "catppuccin";
+      settings.options.theme = "catppuccin-mocha";
     };
 
     plugins.gitsigns.enable = true;
@@ -775,9 +797,18 @@
     plugins.toggleterm = {
       enable = true;
       settings = {
+        open_mapping = "[[<c-\\>]]";
         direction = "float";
         float_opts.border = "curved";
       };
     };
+
+    plugins.lazygit.enable = true;
+
+    # Rapid jk / jj to leave insert mode.
+    plugins.better-escape.enable = true;
+
+    # GitHub Copilot (free tier): ghost-text inline suggestions, accept with <M-l>.
+    plugins.copilot-lua.enable = true;
   };
 }
