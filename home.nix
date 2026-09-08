@@ -163,6 +163,7 @@
       "layer": "overlay",
       "position": "bottom",
       "height": 22,
+      "exclusive": false,
       "modules-center": ["notif"],
       "notif": {
         "format": "{}",
