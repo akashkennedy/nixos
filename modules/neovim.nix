@@ -40,6 +40,7 @@
       splitbelow = true;
       laststatus = 3;
       updatetime = 300;
+      sessionoptions = "blank,buffers,curdir,folds,help,tabpages,winsize,winpos,terminal,localoptions";
     };
 
     globals = {
@@ -188,6 +189,11 @@
       {
         key = "<leader>fh";
         action = "<cmd>Telescope help_tags<cr>";
+        options = { silent = true; };
+      }
+      {
+        key = "<leader>fs";
+        action = "<cmd>AutoSession search<cr>";
         options = { silent = true; };
       }
       {
@@ -690,6 +696,26 @@
             }
             {
               type = "button";
+              val = "  Sessions";
+              opts = {
+                shortcut = "s";
+                align_shortcut = "right";
+                width = 50;
+                hl = "Normal";
+                keymap = [
+                  "n"
+                  "s"
+                  "<cmd>AutoSession search<CR>"
+                  {
+                    noremap = true;
+                    silent = true;
+                  }
+                ];
+              };
+              on_press.__raw = "function() vim.cmd([[AutoSession search]]) end";
+            }
+            {
+              type = "button";
               val = "  Explorer";
               opts = {
                 shortcut = "e";
@@ -731,6 +757,9 @@
           ];
           opts = {
             spacing = 1;
+            "inherit" = {
+              position = "center";
+            };
           };
         }
         {
@@ -746,6 +775,18 @@
           };
         }
       ];
+    };
+
+    # --------------------------------------------------------------------------
+    # Session management
+    # --------------------------------------------------------------------------
+
+    plugins.auto-session = {
+      enable = true;
+      settings = {
+        # Don't auto-save a session when the only buffer is the alpha dashboard.
+        bypass_save_filetypes = [ "alpha" ];
+      };
     };
 
     # --------------------------------------------------------------------------

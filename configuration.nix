@@ -60,14 +60,21 @@
 
   boot = {
     loader = {
-      systemd-boot.enable = true;
+      # Keep only the last 5 generations in the systemd-boot menu.
+      systemd-boot = {
+        enable = true;
+        configurationLimit = 5;
+      };
       efi.canTouchEfiVariables = true;
 
       # Boot menu hidden. Hold a key during boot to show it.
       timeout = 0;
     };
 
-    plymouth.enable = true;
+    # Plymouth is disabled: it expects a graphical display manager handoff and
+    # conflicts with the text-based greetd + tuigreet greeter (was causing a
+    # broken login screen after reboot).
+    plymouth.enable = false;
 
     consoleLogLevel = 3;
 
