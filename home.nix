@@ -35,25 +35,47 @@
       nixos = "cd ~/nixos";
 
       rebuild = "sudo nixos-rebuild switch --flake ~/nixos#nixos";
-      test = "sudo nixos-rebuild test --flake ~/nixos#nixos";
+      nixtest = "sudo nixos-rebuild test --flake ~/nixos#nixos";
       build = "nixos-rebuild build --flake ~/nixos#nixos";
 
       update = "nix flake update ~/nixos";
       check = "nix flake check ~/nixos";
 
-      status = "git -C ~/nixos status";
+      gs = "git -C ~/nixos status";
       diff = "git -C ~/nixos diff";
       log = "git -C ~/nixos log --oneline --decorate --graph";
 
       nixdoc = "less ~/nixos/README.md";
     };
 
-    plugins = [
-      {
-        name = "pure";
-        src = pkgs.fishPlugins.pure;
-      }
-    ];
+    interactiveShellInit = ''
+      # Suppress the 'Welcome to fish' greeting banner
+      set -g fish_greeting
+
+      # Load Pure prompt. nixpkgs 26.05 ships fishPlugins.pure (v4.18.0) using
+      # the fish "vendor" layout (share/fish/vendor_functions.d etc.) instead of
+      # the legacy functions/conf.d layout that home-manager's programs.fish.plugins
+      # expects, so we wire it up manually here.
+      set -g pure_share "${pkgs.fishPlugins.pure}/share/fish"
+      set fish_function_path $pure_share/vendor_functions.d $fish_function_path
+      set fish_complete_path $pure_share/vendor_completions.d $fish_complete_path
+      for f in $pure_share/vendor_conf.d/*.fish
+          source $f
+      end
+
+      # Pure prompt customisation
+      # Keep the current directory on its own line (bigger, more breathing room)
+      set -g pure_enable_single_line_prompt false
+
+      # Show the full home path instead of abbreviating it to '~'
+      function _pure_prompt_current_folder --argument-names current_prompt_width
+          if test -z "$current_prompt_width"; return 1; end
+          set --local current_folder (_pure_parse_directory (math $COLUMNS - $current_prompt_width - 1))
+          set --local current_folder (string replace --regex '^~' "$HOME" $current_folder)
+          set --local current_folder_color (_pure_set_color $pure_color_current_directory)
+          echo "$current_folder_color$current_folder"
+      end
+    '';
   };
 
   programs.home-manager.enable = true;
