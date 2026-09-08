@@ -71,10 +71,7 @@
       timeout = 0;
     };
 
-    # Plymouth is disabled: it expects a graphical display manager handoff and
-    # conflicts with the text-based greetd + tuigreet greeter (was causing a
-    # broken login screen after reboot).
-    plymouth.enable = false;
+    plymouth.enable = true;
 
     consoleLogLevel = 3;
 
