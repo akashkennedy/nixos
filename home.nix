@@ -273,78 +273,33 @@
   # fnott is a pure-C, GTK-free Wayland notification daemon. The look copies
   # Omarchy's (basecamp/omarchy) NotificationCard: dark surface, subtle 2px
   # border, bold summary, dimmed body, blue accent on normal / red on critical.
+  #
+  # The full INI is generated per-theme (see modules/themes.nix) and reached
+  # through the `current` theme symlink, so theme-switch only flips the symlink
+  # and restarts the daemon — no managed file is ever overwritten by scripts
+  # (which is what previously made the home-manager activation abort).
   # ==========================================================================
 
-  services.fnott = {
-    enable = true;
+  home.file.".config/fnott/fnott.ini".source = config.lib.file.mkOutOfStoreSymlink
+    "${config.home.homeDirectory}/.config/themes/current/fnott.ini";
 
-    settings = {
-      main = {
-        # Position — top-right, just below the waybar (same spot as swaync was)
-        anchor = "top-right";
-        edge-margin-horizontal = 20;
-        edge-margin-vertical = 36;
-        notification-margin = 6;
-
-        layer = "overlay";
-        max-width = 340;
-        max-icon-size = 40;
-        icon-theme = "Papirus-Dark";
-
-        default-timeout = 8;
-
-        # Fonts to match the rest of the desktop
-        title-font = "FiraCode Nerd Font";
-        summary-font = "FiraCode Nerd Font";
-        body-font = "FiraCode Nerd Font";
-
-        # Omarchy card surface
-        background = "1e1e2e";
-        border-size = 2;
-        border-color = "313244";
-        border-radius = 0;
-        padding-vertical = 12;
-        padding-horizontal = 12;
-
-        title-color = "a6adc8";
-        summary-color = "cdd6f4";
-        body-color = "cdd6f4";
-
-        # Progress (volume / media notifs)
-        progress-bar-height = 4;
-        progress-color = "6c7086";
-        progress-style = "bar";
-
-        # Actions via fuzzel (dmenu replacement)
-        selection-helper = "fuzzel --dmenu0";
-        selection-helper-uses-null-separator = "yes";
-      };
-
-      low = {
-        # Dimmed accent — Omarchy tints low urgency toward the muted tone
-        title-color = "a6adc8";
-        summary-color = "9399b2";
-        body-color = "7f849c";
-      };
-
-      normal = {
-        # Blue accent border, matching the Omarchy "countdown" accent
-        border-color = "89b4fa";
-        background = "1e1e2e";
-        title-color = "a6adc8";
-        summary-color = "cdd6f4";
-        body-color = "cdd6f4";
-      };
-
-      critical = {
-        # Urgent accent — orange border as the urgency indicator
-        background = "1e1e2e";
-        border-color = "fab387";
-        title-color = "a6adc8";
-        summary-color = "cdd6f4";
-        body-color = "cdd6f4";
-      };
+  systemd.user.services.fnott = {
+    Unit = {
+      Description = "fnott notification daemon";
+      Documentation = "https://fnott.org";
+      PartOf = [ "graphical-session.target" ];
+      After = [ "graphical-session.target" ];
+      ConditionEnvironment = "WAYLAND_DISPLAY";
     };
+
+    Service = {
+      Type = "simple";
+      ExecStart = "${pkgs.fnott}/bin/fnott";
+      Restart = "on-failure";
+      RestartSec = 2;
+    };
+
+    Install.WantedBy = [ "graphical-session.target" ];
   };
 
   # ==========================================================================
@@ -658,10 +613,7 @@
     # --- waybar ---
     systemctl --user restart waybar 2>/dev/null || true
 
-    # --- fnott: no `include` support, write the full config then restart ---
-    mkdir -p "$HOME/.config/fnott"
-    rm -f "$HOME/.config/fnott/fnott.ini"
-    cp "$base/$name/fnott.ini" "$HOME/.config/fnott/fnott.ini"
+    # --- fnott: config is a symlink into `current`; restart to reload it ---
     systemctl --user restart fnott 2>/dev/null || true
 
     # --- yazi: local writable file ---
@@ -683,7 +635,7 @@
         --font='FiraCode Nerd Font:size=12')
     [ -n "$choice" ] || exit 0
     theme_name=$(printf '%s' "$choice" | awk '{print $1}')
-    theme-switch "$theme_name"
+    "$HOME/.local/bin/theme-switch" "$theme_name"
   '';
 
   home.file.".local/bin/theme-pick".executable = true;
