@@ -649,42 +649,41 @@
   };
 
   # ==========================================================================
-  # Fuzzel (launcher) — minimal, docked at the bottom, no icons, Catppuccin
+  # Fuzzel (launcher) — modern, centered, minimal
   #
-  # Uses the same FiraCode Nerd Font as the rest of the desktop (the old
-  # "0x Proto Nerd Font" isn't installed and silently fell back), with valid
-  # fuzzel 1.14 color keys.
+  # True backdrop blur isn't supported by niri/fuzzel, so the surface uses a
+  # semi-transparent background (1e1e2e @ 80%) to match kitty's
+  # background_opacity 0.8 look. Centered, wide, sharp corners.
   # ==========================================================================
 
   xdg.configFile."fuzzel/fuzzel.ini".text = ''
     [main]
-    font=FiraCode Nerd Font:size=11
+    font=FiraCode Nerd Font:size=12
     terminal=kitty
     icons-enabled=no
     layer=overlay
     lines=8
-    width=30
-    horizontal-pad=14
-    vertical-pad=8
-    inner-pad=10
-    prompt="> "
-    anchor=bottom
-    y-margin=16
+    width=38
+    horizontal-pad=20
+    vertical-pad=14
+    inner-pad=18
+    anchor=center
+    y-margin=0
 
     [colors]
-    background=1e1e2eF2
+    background=1e1e2eCC
     text=cdd6f4FF
     prompt=89b4faFF
-    placeholder=585b70FF
+    placeholder=6c7086FF
     input=cdd6f4FF
     selection=313244FF
     selection-text=cdd6f4FF
     match=f9e2afFF
     selection-match=f9e2afFF
-    border=89b4fa00
+    border=313244FF
 
     [border]
-    width=2
+    width=1
     radius=0
   '';
 
