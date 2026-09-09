@@ -680,7 +680,7 @@
     selection-text=cdd6f4FF
     match=f9e2afFF
     selection-match=f9e2afFF
-    border=313244FF
+    border=89b4faFF
 
     [border]
     width=1
