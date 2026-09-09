@@ -471,7 +471,7 @@
         formatters.clang-format.args = [
           "-assume-filename"
           "$FILENAME"
-          "-style={BasedOnStyle: LLVM, IndentWidth: 4, ColumnLimit: 100, IndentCaseLabels: true}"
+          "-style={BasedOnStyle: LLVM, IndentWidth: 4, ColumnLimit: 100, IndentCaseLabels: true, AllowShortFunctionsOnASingleLine: None, AllowShortIfStatementsOnASingleLine: Never, AllowShortLoopsOnASingleLine: false, AllowShortBlocksOnASingleLine: Never}"
         ];
       };
     };
