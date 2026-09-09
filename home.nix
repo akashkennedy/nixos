@@ -583,6 +583,7 @@
     set -euo pipefail
 
     base="$HOME/.config/themes"
+    [ "$#" -eq 0 ] && { echo "usage: theme-switch <theme>" >&2; exit 1; }
     name="$1"
     [ -n "$name" ] || { echo "usage: theme-switch <theme>" >&2; exit 1; }
     [ -d "$base/$name" ] || {
