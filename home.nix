@@ -555,6 +555,48 @@
 
   home.file.".local/bin/suspend-on-battery".executable = true;
 
+  home.file.".local/bin/powermenu".text = ''
+    #!/usr/bin/env bash
+    # Power menu via fuzzel: Lock / Reboot / Shutdown.
+    choice=$(printf 'Lock\nReboot\nShutdown\n' | fuzzel --dmenu --prompt='Power: ')
+    case "$choice" in
+        Lock) hyprlock ;;
+        Reboot) systemctl reboot ;;
+        Shutdown) systemctl poweroff ;;
+    esac
+  '';
+
+  home.file.".local/bin/powermenu".executable = true;
+
+  home.file.".local/bin/keybinds".text = ''
+    #!/usr/bin/env bash
+    # Searchable keybind list: parse the niri config and browse via fuzzel.
+    config="$HOME/.config/niri/config.kdl"
+
+    list=$(awk '
+      /^[ \t]+[A-Za-z0-9+_-]+( [^{}]*)?\{/ {
+        gsub(/^[ \t]+/, "")
+        if ($0 ~ /^\/\//) next
+        key = $1
+        if (key !~ /^(Mod|Ctrl|Alt|Super|Shift|XF86)/) next
+        title = ""
+        if (match($0, /hotkey-overlay-title="[^"]*"/)) {
+          title = substr($0, RSTART, RLENGTH)
+          gsub(/hotkey-overlay-title="|"/, "", title)
+        }
+        sub(/.*\{[ \t]*/, "")
+        action = $1
+        gsub(/;/, "", action)
+        if (title == "") title = action
+        printf "%-24s %s\n", key, title
+      }
+    ' "$config")
+
+    printf '%s\n' "$list" | fuzzel --dmenu --prompt='Keybind: ' >/dev/null
+  '';
+
+  home.file.".local/bin/keybinds".executable = true;
+
   systemd.user.services.hypridle = {
     Unit = {
       Description = "Hyprland idle daemon";
@@ -645,6 +687,29 @@
     width=2
     radius=0
   '';
+
+  # Power options appear in the fuzzel launcher alongside apps (Mod+Space).
+  # Lock maps to hyprlock; Reboot/Shutdown go through systemd/logind.
+  xdg.desktopEntries = {
+    "Lock Screen" = {
+      name = "Lock Screen";
+      exec = "${pkgs.hyprlock}/bin/hyprlock";
+      comment = "Lock the screen";
+      categories = [ "Utility" ];
+    };
+    Reboot = {
+      name = "Reboot";
+      exec = "systemctl reboot";
+      comment = "Restart the system";
+      categories = [ "System" ];
+    };
+    Shutdown = {
+      name = "Shutdown";
+      exec = "systemctl poweroff";
+      comment = "Power off the system";
+      categories = [ "System" ];
+    };
+  };
 
   programs.waybar = {
     enable = true;
