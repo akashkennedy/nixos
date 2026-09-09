@@ -17,6 +17,34 @@
       settings.flavour = "mocha";
     };
 
+    # Gruvbox + Nord as runtime-switchable colorschemes (themes.nix).
+    extraPlugins = with pkgs; [
+      vimPlugins.gruvbox
+      vimPlugins.nord-vim
+    ];
+
+    # Apply the active runtime theme on startup (~/.config/themes/current/neovim.lua
+    # is generated per theme by modules/themes.nix and flipped by theme-switch).
+    extraConfigLua = ''
+      local function akash_apply_theme()
+        local p = vim.env.HOME .. "/.config/themes/current/neovim.lua"
+        local f = io.open(p, "r")
+        if not f then return end
+        local content = f:read("*a")
+        f:close()
+        local ok, err = pcall(function()
+          load(content, "@theme")()
+        end)
+        if not ok then
+          vim.notify("theme load failed: " .. tostring(err), vim.log.levels.WARN)
+        end
+      end
+      vim.api.nvim_create_autocmd("UIEnter", {
+        callback = akash_apply_theme,
+        once = true,
+      })
+    '';
+
     opts = {
       number = true;
       relativenumber = true;
@@ -811,7 +839,7 @@
 
     plugins.lualine = {
       enable = true;
-      settings.options.theme = "catppuccin-mocha";
+      settings.options.theme = "auto";
     };
 
     plugins.gitsigns.enable = true;

@@ -3,6 +3,7 @@
 {
   imports = [
     ./modules/neovim.nix
+    ./modules/themes.nix
   ];
 
   home.username = "akash";
@@ -455,7 +456,7 @@
 
     background {
         monitor =
-        path = /home/akash/Downloads/1377801.png
+        path = /home/akash/.config/themes/wallpaper
         color = rgba(30, 30, 46, 1.0)
         blur_size = 4
         blur_passes = 2
@@ -570,32 +571,145 @@
 
   home.file.".local/bin/keybinds".text = ''
     #!/usr/bin/env bash
-    # Searchable keybind list: parse the niri config and browse via fuzzel.
+    # Searchable keybind list: parse the niri config, group duplicate aliases
+    # (e.g. Mod+Left / Mod+H) into one entry, and show the bound action.
     config="$HOME/.config/niri/config.kdl"
 
     list=$(awk '
       /^[ \t]+[A-Za-z0-9+_-]+( [^{}]*)?\{/ {
-        gsub(/^[ \t]+/, "")
-        if ($0 ~ /^\/\//) next
-        key = $1
+        line = $0
+        gsub(/^[ \t]+/, "", line)
+        if (line ~ /^\/\//) next
+        key = line
+        sub(/[ \t].*/, "", key)
         if (key !~ /^(Mod|Ctrl|Alt|Super|Shift|XF86)/) next
-        title = ""
-        if (match($0, /hotkey-overlay-title="[^"]*"/)) {
-          title = substr($0, RSTART, RLENGTH)
-          gsub(/hotkey-overlay-title="|"/, "", title)
-        }
-        sub(/.*\{[ \t]*/, "")
-        action = $1
-        gsub(/;/, "", action)
-        if (title == "") title = action
-        printf "%-24s %s\n", key, title
-      }
-    ' "$config")
 
-    printf '%s\n' "$list" | fuzzel --dmenu --prompt='Keybind: ' >/dev/null
+        title = ""
+        if (match(line, /hotkey-overlay-title="[^"]*"/)) {
+          title = substr(line, RSTART + 22, RLENGTH - 23)
+        }
+
+        rest = line
+        sub(/^[^{]*\{[ \t]*/, "", rest)
+        action = rest
+        sub(/[ \t]*;[ \t]*}[ \t]*$/, "", action)
+        gsub(/^[ \t]+|[ \t]+$/, "", action)
+
+        keys[action] = keys[action] " " key
+        if (title != "" && !(action in ttl)) ttl[action] = title
+      }
+      END {
+        for (a in keys) {
+          ks = keys[a]
+          gsub(/^ /, "", ks)
+          label = (a in ttl) ? ttl[a] : a
+          detail = (a == label) ? "" : a
+          printf "%s\t%s\t%s\n", ks, label, detail
+        }
+      }
+    ' "$config" | sort -t$'\t' -k2 | while IFS=$'\t' read -r ks label detail; do
+      if [ -n "$detail" ]; then
+        printf "%-24s %s\n%26s %s\n" "$ks" "$label" "" "$detail"
+      else
+        printf "%-24s %s\n" "$ks" "$label"
+      fi
+    done)
+
+    printf '%s\n' "$list" | fuzzel --dmenu --width=70 --lines=30 \
+      --font='FiraCode Nerd Font:size=13' --prompt='Keybindings: ' >/dev/null
   '';
 
   home.file.".local/bin/keybinds".executable = true;
+
+  home.file.".local/bin/theme-switch".text = ''
+    #!/usr/bin/env bash
+    # Switch the active runtime theme without a rebuild: flip the `current`
+    # symlink, then live-reload every themeable desktop app.
+    set -euo pipefail
+
+    base="$HOME/.config/themes"
+    name="$1"
+    [ -n "$name" ] || { echo "usage: theme-switch <theme>" >&2; exit 1; }
+    [ -d "$base/$name" ] || {
+      echo "unknown theme: $name (available: $(cut -f1 "$base/list.tsv" | tr '\n' ' '))" >&2
+      exit 1
+    }
+
+    ln -sfn "$base/$name" "$base/current"
+
+    # --- niri: focus-ring / border colors + live reload ---
+    niri_config="$HOME/.config/niri/config.kdl"
+    if [ -f "$niri_config" ]; then
+      active="$(sed -n 's/^[[:space:]]*active-color[[:space:]]*"\([^"]*\)".*/\1/p' "$base/$name/niri.snippet")"
+      inactive="$(sed -n 's/^[[:space:]]*inactive-color[[:space:]]*"\([^"]*\)".*/\1/p' "$base/$name/niri.snippet")"
+      if [ -n "$active" ]; then
+        sed -i "s/^\([[:space:]]*active-color[[:space:]]*\)\"[^\"]*\"/\1\"$active\"/; s/^\([[:space:]]*inactive-color[[:space:]]*\)\"[^\"]*\"/\1\"$inactive\"/" "$niri_config"
+        niri msg action load-config-file 2>/dev/null || true
+      fi
+    fi
+
+    # --- kitty: theme.conf symlinks into `current`; SIGUSR1 reloads config ---
+    kitty_theme="$HOME/.config/kitty/theme.conf"
+    if [ -L "$kitty_theme" ] || [ ! -e "$kitty_theme" ]; then
+      ln -sfn "$base/current/kitty.conf" "$kitty_theme"
+    fi
+    pkill -USR1 -x kitty 2>/dev/null || true
+
+    # --- waybar ---
+    systemctl --user restart waybar 2>/dev/null || true
+
+    # --- fnott: no `include` support, write the full config then restart ---
+    mkdir -p "$HOME/.config/fnott"
+    rm -f "$HOME/.config/fnott/fnott.ini"
+    cp "$base/$name/fnott.ini" "$HOME/.config/fnott/fnott.ini"
+    systemctl --user restart fnott 2>/dev/null || true
+
+    # --- yazi: local writable file ---
+    mkdir -p "$HOME/.config/yazi"
+    cp "$base/$name/yazi/theme.toml" "$HOME/.config/yazi/theme.toml"
+
+    echo "theme -> $name"
+    echo "fuzzel + neovim will use the new theme on next launch."
+  '';
+
+  home.file.".local/bin/theme-switch".executable = true;
+
+  home.file.".local/bin/theme-pick".text = ''
+    #!/usr/bin/env bash
+    # Pick a theme via fuzzel and apply it.
+    base="$HOME/.config/themes"
+    choice=$(awk -F'\t' '{print $1"  —  "$2}' "$base/list.tsv" | \
+      fuzzel --dmenu --prompt='Theme: ' --width=60 --lines=8 \
+        --font='FiraCode Nerd Font:size=12')
+    [ -n "$choice" ] || exit 0
+    theme_name=$(printf '%s' "$choice" | awk '{print $1}')
+    theme-switch "$theme_name"
+  '';
+
+  home.file.".local/bin/theme-pick".executable = true;
+
+  home.file.".local/bin/wallpaper-pick".text = ''
+    #!/usr/bin/env bash
+    # Pick a wallpaper from ~/wallpapers; sweep it onto the display with
+    # awww and point the hyprlock wallpaper symlink at the same image.
+    dir="$HOME/wallpapers"
+    [ -d "$dir" ] || { echo "no wallpaper dir: $dir" >&2; exit 1; }
+
+    pics=$(find "$dir" -maxdepth 1 -type f \
+      \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' \
+         -o -iname '*.webp' -o -iname '*.gif' -o -iname '*.bmp' \) \
+      -printf '%f\t%p\n' | sort)
+
+    choice=$(printf '%s\n' "$pics" | fuzzel --dmenu --prompt='Wallpaper: ' \
+      --width=55 --lines=12 --font='FiraCode Nerd Font:size=12')
+    [ -n "$choice" ] || exit 0
+
+    path=$(printf '%s\n' "$choice" | awk -F'\t' '{print $2}')
+    ln -sfn "$path" "$HOME/.config/themes/wallpaper"
+    awww img "$path" 2>/dev/null || true
+  '';
+
+  home.file.".local/bin/wallpaper-pick".executable = true;
 
   systemd.user.services.hypridle = {
     Unit = {
@@ -658,6 +772,8 @@
 
   xdg.configFile."fuzzel/fuzzel.ini".text = ''
     [main]
+    # Colors/border come from the active runtime theme (~/.config/themes/current)
+    include=~/.config/themes/current/fuzzel.ini
     font=FiraCode Nerd Font:size=12
     terminal=kitty
     icons-enabled=no
@@ -669,22 +785,6 @@
     inner-pad=18
     anchor=center
     y-margin=0
-
-    [colors]
-    background=1e1e2eCC
-    text=cdd6f4FF
-    prompt=89b4faFF
-    placeholder=6c7086FF
-    input=cdd6f4FF
-    selection=313244FF
-    selection-text=cdd6f4FF
-    match=f9e2afFF
-    selection-match=f9e2afFF
-    border=89b4faFF
-
-    [border]
-    width=1
-    radius=0
   '';
 
   # Power options appear in the fuzzel launcher alongside apps (Mod+Space).
@@ -777,6 +877,8 @@
     };
 
     style = ''
+      @import url("/home/akash/.config/themes/current/waybar.css");
+
       * {
         font-family: "FiraCode Nerd Font", "JetBrainsMono Nerd Font", monospace;
         font-size: 13px;
@@ -786,31 +888,31 @@
       }
 
       window#waybar {
-        background-color: rgba(30, 30, 46, 0.92);
-        color: #cdd6f4;
+        background-color: alpha(@bar_bg, 0.92);
+        color: @text;
       }
 
       #workspaces button {
         padding: 0 6px;
-        color: #6c7086;
+        color: @dim;
       }
       #workspaces button.focused {
-        background-color: rgba(137, 180, 250, 0.30);
-        color: #89b4fa;
+        background-color: alpha(@accent, 0.30);
+        color: @accent;
       }
       #workspaces button.active {
-        color: #89b4fa;
+        color: @accent;
       }
       #workspaces button.urgent {
-        color: #f38ba8;
+        color: @red;
       }
 
-      #network { color: #89b4fa; }
-      #bluetooth { color: #cba6f7; }
-      #clock { color: #cdd6f4; }
-      #battery { color: #a6e3a1; }
-      #battery.warning { color: #f9e2af; }
-      #battery.critical { color: #f38ba8; }
+      #network { color: @blue; }
+      #bluetooth { color: @purple; }
+      #clock { color: @text; }
+      #battery { color: @green; }
+      #battery.warning { color: @yellow; }
+      #battery.critical { color: @red; }
 
       #network, #bluetooth, #battery, #clock {
         padding: 0 8px;
@@ -818,14 +920,14 @@
 
       #network:hover, #bluetooth:hover, #battery:hover, #clock:hover,
       #workspaces button:hover {
-        background-color: rgba(137, 180, 250, 0.25);
-        color: #cdd6f4;
+        background-color: alpha(@accent, 0.25);
+        color: @text;
       }
 
       tooltip {
-        background-color: rgba(17, 17, 27, 0.95);
-        border: 1px solid #313244;
-        color: #cdd6f4;
+        background-color: alpha(@tooltip_bg, 0.95);
+        border: 1px solid @surface1;
+        color: @text;
       }
     '';
   };
